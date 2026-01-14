@@ -22,7 +22,6 @@
             <div class="user-profile" id="profileTrigger">
                 <span style="font-size:13px; color:#AAB0BC; margin-right:8px;">My Account</span>
                 <div class="avatar">U</div>
-                
                 <div class="profile-menu" id="profileMenu">
                     <a href="#" id="logoutBtn">Logout</a>
                     <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
@@ -52,9 +51,46 @@
         </section>
 
         <section class="card recent-transactions">
+            
             <div class="list-header">
                 <h3>Recent Expenses</h3>
             </div>
+
+            <div class="filter-toolbar">
+                <input type="text" id="filterSearch" placeholder="Search..." class="filter-input">
+
+                <select id="filterSort" class="filter-select">
+                    <option value="date-desc">Date: Newest First</option>
+                    <option value="date-asc">Date: Oldest First</option>
+                    <option value="amount-desc">Amount: High to Low</option>
+                    <option value="amount-asc">Amount: Low to High</option>
+                </select>
+
+                <select id="filterMonth" class="filter-select">
+                    <option value="all">All Months</option>
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+
+                <select id="filterYear" class="filter-select">
+                    <option value="all">All Years</option>
+                    </select>
+
+                <select id="filterCategory" class="filter-select">
+                    <option value="all">All Categories</option>
+                    </select>
+            </div>
+
             <div class="scroll-area" id="expenseList">
                 <p style="text-align:center; color:#555; margin-top:20px;">Loading expenses...</p>
             </div>
@@ -66,50 +102,29 @@
         <div class="modal">
             <h3 style="margin-bottom:24px;">Add Expense</h3>
             <form id="addExpenseForm">
-                
                 <div class="form-group">
                     <label>Description</label>
                     <input type="text" id="desc" required placeholder="e.g. Dinner">
                 </div>
-                
                 <div class="form-group">
                     <label>Amount (₹)</label>
                     <input type="number" id="amount" required placeholder="0.00">
                 </div>
-
                 <div class="form-group">
                     <label>Category</label>
                     <div style="display: flex; gap: 10px; align-items: stretch;">
-                        
                         <select id="categorySelect" required style="flex: 1;">
                             <option value="" disabled selected>Select a category</option>
                         </select>
-
-                        <button type="button" id="addCategoryBtn" 
-                            style="
-                                width: 50px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                background: rgba(255,255,255,0.05);
-                                border: 1px solid rgba(255,255,255,0.1);
-                                border-radius: 12px;
-                                color: #fff;
-                                cursor: pointer;
-                                font-size: 24px;
-                                line-height: 1;
-                                padding: 0;
-                            ">
+                        <button type="button" id="addCategoryBtn" style="width: 50px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; cursor: pointer; font-size: 24px; padding:0;">
                             <span style="margin-top: -2px;">+</span>
                         </button>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Date</label>
                     <input type="date" id="date" required>
                 </div>
-
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="closeModalBtn">Cancel</button>
                     <button type="submit" class="btn-primary" style="flex:1;">Save Expense</button>
@@ -121,7 +136,6 @@
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
     <script>
-        // Restrict Date Picker to Today (No future dates)
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').setAttribute('max', today);
     </script>
