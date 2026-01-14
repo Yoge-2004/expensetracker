@@ -1,12 +1,16 @@
 // Auth Check
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
+const userName = localStorage.getItem("userName") || "User"; // ✅ Get Name
+
 if (!token || !userId) window.location.href = "index.html";
+
+// ✅ UPDATE UI WITH NAME
+document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
+document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
 // Formatters
 const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
-
-// ✅ NEW: Nice Date Formatter
 const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
@@ -20,21 +24,28 @@ const elements = {
     expenseList: document.getElementById("expenseList"),
     modal: document.getElementById("expenseModal"),
     categorySelect: document.getElementById("categorySelect"),
-    profileMenu: document.getElementById("profileMenu"), // Dropdown
+    addCategoryBtn: document.getElementById("addCategoryBtn"), // ✅ New Button
+    profileMenu: document.getElementById("profileMenu"),
     addForm: document.getElementById("addExpenseForm")
 };
 
 // 1. Load Data
 async function loadDashboard() {
     try {
-        const [expenses, categories] = await Promise.all([
+        // Fetch User Expenses + User Categories + Global Categories
+        // We fetch "User Categories" (custom) and "Global" separately
+        const [expenses, globalCats, userCats] = await Promise.all([
             apiRequest(`/expenses/user/${userId}`),
-            apiRequest(`/categories/global`)
+            apiRequest(`/categories/global`),
+            apiRequest(`/categories/user/${userId}`) // ✅ Fetch custom categories
         ]);
 
-        populateCategoryDropdown(categories);
+        // Merge categories
+        const allCategories = [...globalCats, ...userCats];
+
+        populateCategoryDropdown(allCategories);
         updateStats(expenses);
-        renderChart(expenses); // ✅ Render Chart
+        renderChart(expenses);
         renderList(expenses);
 
     } catch (error) {
@@ -42,63 +53,85 @@ async function loadDashboard() {
     }
 }
 
-// 2. Helper Functions
+// 2. Dropdown Logic
 function populateCategoryDropdown(categories) {
+    // Save current selection if re-rendering
+    const currentVal = elements.categorySelect.value;
+
     elements.categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>';
     categories.forEach(cat => {
         elements.categorySelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
     });
+
+    if (currentVal) elements.categorySelect.value = currentVal;
 }
 
+// ✅ 3. Add New Category Logic
+elements.addCategoryBtn.addEventListener("click", async () => {
+    const name = prompt("Enter new category name:");
+    if (!name) return;
+
+    try {
+        // Call Backend to Create Category
+        const newCat = await apiRequest(`/categories/user/${userId}`, {
+            method: "POST",
+            body: JSON.stringify({ name: name })
+        });
+
+        // Add to dropdown immediately and select it
+        const option = document.createElement("option");
+        option.value = newCat.id;
+        option.textContent = newCat.name;
+        option.selected = true;
+        elements.categorySelect.appendChild(option);
+
+    } catch (error) {
+        alert("Failed to add category: " + error.message);
+    }
+});
+
+// 4. Update Stats
 function updateStats(expenses) {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     elements.totalAmount.textContent = formatCurrency(total);
     elements.expenseCount.textContent = expenses.length;
 }
 
-// ✅ 3. Chart Rendering
+// 5. Chart
 function renderChart(expenses) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
-    
-    // Group by Category
     const categoryTotals = {};
     expenses.forEach(exp => {
         const catName = exp.categoryName || 'Uncategorized';
         categoryTotals[catName] = (categoryTotals[catName] || 0) + exp.amount;
     });
 
-    const labels = Object.keys(categoryTotals);
-    const data = Object.values(categoryTotals);
-
-    if (chartInstance) chartInstance.destroy(); // Destroy old chart before re-rendering
+    if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: labels,
+            labels: Object.keys(categoryTotals),
             datasets: [{
-                data: data,
-                backgroundColor: ['#FF9F6E', '#FF7A3D', '#64D2FF', '#A084FF', '#34C759'],
+                data: Object.values(categoryTotals),
+                backgroundColor: ['#FF9F6E', '#FF7A3D', '#64D2FF', '#A084FF', '#34C759', '#FFD60A'],
                 borderWidth: 0
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'right', labels: { color: '#AAB0BC', font: { size: 10 } } }
-            }
+            plugins: { legend: { position: 'right', labels: { color: '#AAB0BC', font: { size: 10 } } } }
         }
     });
 }
 
-// ✅ 4. Render List with Delete Button
+// 6. List with Delete
 function renderList(expenses) {
     if (expenses.length === 0) {
         elements.expenseList.innerHTML = `<p style="text-align:center; color:#555; margin-top:20px;">No expenses found.</p>`;
         return;
     }
-
     elements.expenseList.innerHTML = expenses.map(exp => `
         <div class="expense-item">
             <div class="expense-info">
@@ -115,18 +148,18 @@ function renderList(expenses) {
     `).join("");
 }
 
-// ✅ 5. Delete Actions
+// 7. Actions
 window.deleteExpense = async (id) => {
-    if(!confirm("Are you sure you want to delete this expense?")) return;
+    if (!confirm("Delete this expense?")) return;
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
-        loadDashboard();
+        loadDashboard(); // Refresh list
     } catch (err) { alert(err.message); }
 };
 
 document.getElementById("deleteAccountBtn").addEventListener("click", async (e) => {
     e.preventDefault();
-    if(!confirm("WARNING: This will permanently delete your account and all data. Continue?")) return;
+    if (!confirm("Permanently delete account?")) return;
     try {
         await apiRequest(`/users/${userId}`, { method: 'DELETE' });
         localStorage.clear();
@@ -134,19 +167,11 @@ document.getElementById("deleteAccountBtn").addEventListener("click", async (e) 
     } catch (err) { alert(err.message); }
 });
 
-// 6. Event Listeners
-document.getElementById("profileTrigger").addEventListener("click", () => {
-    elements.profileMenu.classList.toggle("active"); // Toggle Dropdown
-});
-
-// Close dropdown when clicking outside
+// Event Listeners
+document.getElementById("profileTrigger").addEventListener("click", () => elements.profileMenu.classList.toggle("active"));
 document.addEventListener("click", (e) => {
-    if (!e.target.closest(".user-profile")) {
-        elements.profileMenu.classList.remove("active");
-    }
+    if (!e.target.closest(".user-profile")) elements.profileMenu.classList.remove("active");
 });
-
-// Add Expense
 elements.addForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -164,8 +189,6 @@ elements.addForm.addEventListener("submit", async (e) => {
         loadDashboard();
     } catch (err) { alert(err.message); }
 });
-
-// Modal Toggles
 document.getElementById("openModalBtn").addEventListener("click", () => elements.modal.classList.add("active"));
 document.getElementById("closeModalBtn").addEventListener("click", () => elements.modal.classList.remove("active"));
 document.getElementById("logoutBtn").addEventListener("click", () => {

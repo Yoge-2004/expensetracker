@@ -4,6 +4,8 @@ import com.example.expensetracker.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -44,6 +46,22 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, InternalAuthenticationServiceException.class})
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            Exception ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Authentication Failed",
+                "Invalid email or password", // Custom friendly message
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(Exception.class)

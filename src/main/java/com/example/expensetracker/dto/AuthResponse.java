@@ -7,5 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class AuthResponse {
     private String token;
-    private Long userId; // Added this field
+    private Long userId;
+    private String name; // ✅ ADDED THIS FIELD
 }

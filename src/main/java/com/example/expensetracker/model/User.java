@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.util.List;
 
 @Entity
@@ -12,11 +11,14 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // ✅ ADDED THIS FIELD
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false, unique = true)
     private String email;

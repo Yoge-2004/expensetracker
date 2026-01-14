@@ -13,16 +13,25 @@ async function apiRequest(endpoint, options = {}) {
         headers
     });
 
-    if (response.status === 401) {
+    // 1. Handle Login Redirects (401)
+    if (response.status === 401 && !endpoint.includes("/auth/login")) {
         localStorage.removeItem("token");
         window.location.href = "index.html";
         return;
     }
 
+    // 2. ✅ FIX: Handle "No Content" (204) for Deletes
+    // If the server says "Success, but I have nothing to send back", we return null.
+    if (response.status === 204) {
+        return null;
+    }
+
+    // 3. Handle Errors
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({})); // Safe parse
         throw new Error(error.message || "Something went wrong");
     }
 
+    // 4. Return JSON
     return response.json();
 }

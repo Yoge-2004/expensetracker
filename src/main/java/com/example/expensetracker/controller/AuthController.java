@@ -40,20 +40,22 @@ public class AuthController {
 
         String token = jwtService.generateToken(authentication.getName());
 
-        // ✅ Fetch User to get ID
         User user = userService.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        return ResponseEntity.ok(new AuthResponse(token, user.getId()));
+        // ✅ Return Name in response
+        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName()));
     }
 
-    // ✅ Added Register Endpoint
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@Valid @RequestBody RegisterRequest request) {
         User user = new User();
+        user.setName(request.getName()); // ✅ Save Name
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword());
+
         User registeredUser = userService.registerUser(user);
+
         return new ResponseEntity<>(UserMapper.toDto(registeredUser), HttpStatus.CREATED);
     }
 }

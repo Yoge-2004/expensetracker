@@ -10,6 +10,10 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
+    // ✅ ADDED THIS FIELD
+    @NotBlank(message = "Name is required")
+    private String name;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     private String email;
