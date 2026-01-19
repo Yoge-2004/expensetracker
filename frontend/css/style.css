@@ -49,7 +49,7 @@ body {
     background: var(--bg-dark);
     color: var(--text-main);
 
-    /* ✅ FIX: Allow page to scroll naturally so nothing is cut off */
+    /* Allow scroll */
     min-height: 100vh;
     height: auto;
     overflow-y: auto;
@@ -63,8 +63,6 @@ a {
 }
 
 /* ================== 3. COMPONENTS ================== */
-
-/* Primary Button */
 .btn-primary,
 button[type="submit"] {
     width: 100%;
@@ -84,7 +82,6 @@ button[type="submit"] {
     box-shadow: 0 10px 30px var(--accent-glow);
 }
 
-/* Inputs */
 .field {
     position: relative;
     margin-bottom: 20px;
@@ -127,7 +124,6 @@ button[type="submit"] {
     background: var(--bg-dark);
 }
 
-/* Password Toggle */
 .password-wrapper {
     position: relative;
     width: 100%;
@@ -144,7 +140,6 @@ button[type="submit"] {
     user-select: none;
 }
 
-/* Brand Logo */
 .brand-logo {
     font-size: 20px;
     font-weight: 700;
@@ -324,7 +319,6 @@ button[type="submit"] {
     max-width: 1200px;
     margin: 0 auto;
     padding: 30px 24px;
-    /* ✅ FIX: Height Auto allows container to grow, enabling body scroll */
     height: auto;
     display: flex;
     flex-direction: column;
@@ -337,7 +331,6 @@ button[type="submit"] {
     align-items: center;
 }
 
-/* Profile */
 .user-profile {
     position: relative;
     cursor: pointer;
@@ -398,7 +391,6 @@ button[type="submit"] {
     background: var(--input-bg);
 }
 
-/* Stats Grid */
 .grid-stats {
     display: grid;
     grid-template-columns: 300px 1fr;
@@ -431,7 +423,6 @@ button[type="submit"] {
     color: var(--text-main);
 }
 
-/* Charts */
 .chart-wrapper {
     position: relative;
     width: 100%;
@@ -441,8 +432,6 @@ button[type="submit"] {
     justify-content: center;
 }
 
-/* List & Scroll Areas */
-/* ✅ FIX: Removed fixed flex height so page pushes down naturally */
 .recent-transactions {
     height: auto;
     overflow: visible;
@@ -460,7 +449,6 @@ button[type="submit"] {
     gap: 10px;
 }
 
-/* ✅ FIX: Limit list height, but allow page scroll */
 .scroll-area {
     height: auto;
     max-height: 500px;
@@ -503,7 +491,6 @@ button[type="submit"] {
     font-size: 16px;
 }
 
-/* Filters & Dropdowns */
 .filter-toolbar {
     display: none;
     gap: 10px;
@@ -541,7 +528,6 @@ select option {
     color: var(--text-main);
 }
 
-/* Modal */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -619,93 +605,143 @@ select option {
     cursor: pointer;
 }
 
-/* ================== 7. MOBILE RESPONSIVE ================== */
+/* ================== 7. BUDGET PROGRESS BARS ================== */
+.budget-item {
+    margin-bottom: 16px;
+}
+
+.budget-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.progress-track {
+    width: 100%;
+    height: 8px;
+    background: var(--input-bg);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.progress-fill.warning {
+    background: #FFD60A;
+}
+
+.progress-fill.danger {
+    background: #FF6B50;
+}
+
+/* ================== 8. MOBILE RESPONSIVE ================== */
 @media (max-width: 900px) {
-    /* 1. Unlock Page Scrolling */
-    body { 
-        height: auto; 
-        overflow-y: auto; 
-        background: var(--bg-dark); 
+    body {
+        height: auto;
+        overflow-y: auto;
+        background: var(--bg-dark);
     }
 
-    /* 2. Stack Auth Page (Login/Register) */
-    .split-screen { 
-        display: flex; 
-        flex-direction: column; 
-        height: auto; 
-        min-height: 100vh; 
-    }
-    .hero-section { 
-        min-height: 200px; 
-        padding: 30px; 
-        flex: none; 
-        align-items: center; 
-    }
-    .hero-content h1 { font-size: 28px; }
-    .hero-content p { display: none; }
-    .auth-section { padding: 40px 20px; flex: 1; }
-
-    /* 3. Dashboard Layout - Unstack Grid */
-    .dashboard-container { 
-        height: auto; 
-        display: block; 
-        padding: 20px; 
-    }
-    .grid-stats { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 20px; 
-        margin-bottom: 30px; 
-    }
-    
-    /* 4. Chart Fixes */
-    .card { 
-        justify-content: flex-start; 
-        min-height: 180px; 
-    }
-    .card canvas { 
-        width: 100% !important; 
-        max-height: 250px; 
+    .split-screen {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
     }
 
-    /* 5. Header Actions (Search, Filter, Export) - Stack them */
-    .list-header { 
-        flex-direction: column !important; 
-        align-items: flex-start !important; 
-        gap: 12px; 
-    }
-    .list-header-actions { 
-        width: 100%; 
-        display: flex; 
-        gap: 10px; 
-    }
-    .search-bar { 
-        flex: 1; 
-        width: auto !important; 
-    }
-    .btn-icon { flex: 0 0 36px; }
-
-    /* 6. Filter Dropdown Overflow Fix */
-    .filter-toolbar { 
-        flex-direction: column; 
-        align-items: stretch; 
-    }
-    .filter-select { 
-        width: 100%; 
-        min-width: 0; 
-        max-width: 100%; 
+    .hero-section {
+        min-height: 200px;
+        padding: 30px;
+        flex: none;
+        align-items: center;
     }
 
-    /* 7. List Scrolling Logic */
-    .recent-transactions { 
-        height: auto; 
-        overflow: visible; 
+    .hero-content h1 {
+        font-size: 28px;
     }
-    .scroll-area { 
-        overflow: visible; 
-        height: auto; 
-        max-height: 320px; /* Limits height to ~5 items */
-        overflow-y: auto;  /* Scroll enables only when full */
+
+    .hero-content p {
+        display: none;
+    }
+
+    .auth-section {
+        padding: 40px 20px;
+        flex: 1;
+    }
+
+    .dashboard-container {
+        height: auto;
+        display: block;
+        padding: 20px;
+    }
+
+    .grid-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        justify-content: flex-start;
+        min-height: 180px;
+    }
+
+    .card canvas {
+        width: 100% !important;
+        max-height: 250px;
+    }
+
+    .list-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+
+    .list-header-actions {
+        width: 100%;
+        display: flex;
+        gap: 10px;
+    }
+
+    .search-bar {
+        flex: 1;
+        width: auto !important;
+    }
+
+    .btn-icon {
+        flex: 0 0 36px;
+    }
+
+    .filter-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-select {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .recent-transactions {
+        height: auto;
+        overflow: visible;
+    }
+
+    .scroll-area {
+        overflow: visible;
+        height: auto;
+        max-height: 320px;
+        overflow-y: auto;
     }
 }
 
@@ -719,4 +755,46 @@ select option {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ================== 9. ALIGNMENT FIXES ================== */
+
+/* 1. Modal Category Group */
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+.input-group select {
+    flex: 1;
+}
+.input-group .btn-icon {
+    width: 50px;
+    height: auto !important; /* Stretch to match select height */
+    
+    /* Perfect Centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 12px;
+}
+
+/* 2. Monthly Budget Header */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    height: 32px;
+}
+.btn-small {
+    width: 32px;
+    height: 32px;
+    
+    /* Perfect Centering */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
 }

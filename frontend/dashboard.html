@@ -45,7 +45,7 @@
                 <div class="user-profile" id="profileTrigger">
                     <div class="avatar">U</div>
                     <div class="profile-menu" id="profileMenu">
-                        <a href="#" id="logoutBtn">Logout</a>
+                        <a href="#" id="manageSubsBtn">Subscriptions</a> <a href="#" id="logoutBtn">Logout</a>
                         <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
                     </div>
                 </div>
@@ -72,6 +72,22 @@
                 <div class="chart-wrapper">
                     <canvas id="expenseChart"></canvas>
                 </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <span class="card-label">Monthly Budgets</span>
+                <button id="addBudgetBtn" class="btn-icon btn-small" title="Set Budget">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+            <div id="budgetList">
+                <p class="text-muted" style="font-size:13px;">Loading budgets...</p>
             </div>
         </section>
 
@@ -105,8 +121,10 @@
             </div>
 
             <div class="filter-toolbar" id="filterPanel">
-                <input type="date" id="filterStartDate" class="filter-select dark-date" title="Start Date">
-                <input type="date" id="filterEndDate" class="filter-select dark-date" title="End Date">
+                <input type="text" id="filterStartDate" class="filter-select dark-date" placeholder="Start Date"
+                    onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
+                <input type="text" id="filterEndDate" class="filter-select dark-date" placeholder="End Date"
+                    onfocus="(this.type='date')" onblur="if(!this.value)this.type='text'">
 
                 <select id="filterMonth" class="filter-select">
                     <option value="all">All Months</option>
@@ -157,24 +175,53 @@
                     <label>Amount (₹)</label>
                     <input type="number" id="amount" required placeholder="0.00" step="0.01">
                 </div>
+
                 <div class="form-group">
                     <label>Category</label>
-                    <div style="display: flex; gap: 10px;">
+                    <div class="input-group">
                         <select id="categorySelect" required>
                             <option value="" disabled selected>Select a category</option>
                         </select>
-                        <button type="button" id="addCategoryBtn" class="btn-icon" style="width:50px;">+</button>
+                        <button type="button" id="addCategoryBtn" class="btn-icon" title="Add New Category">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>Date</label>
                     <input type="date" id="date" required class="dark-date">
                 </div>
+
+                <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom: 20px;">
+                    <input type="checkbox" id="isRecurring" style="width:auto; margin:0; cursor:pointer;">
+                    <label for="isRecurring"
+                        style="margin:0; cursor:pointer; font-size:14px; color:var(--text-main);">Repeat this expense
+                        monthly</label>
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="closeModalBtn">Cancel</button>
                     <button type="submit" class="btn-primary" style="flex:1;">Save Expense</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="subsModal">
+        <div class="modal" style="max-width: 500px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:var(--text-main);">Active Subscriptions</h3>
+                <button id="closeSubsBtn" class="btn-icon" style="width:30px; height:30px;">✕</button>
+            </div>
+
+            <div id="subsList" style="max-height:300px; overflow-y:auto;">
+                <p class="text-muted">Loading...</p>
+            </div>
         </div>
     </div>
 

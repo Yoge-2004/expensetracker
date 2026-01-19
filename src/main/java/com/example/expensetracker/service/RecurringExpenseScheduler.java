@@ -22,8 +22,8 @@ public class RecurringExpenseScheduler {
         this.expenseRepository = expenseRepo;
     }
 
-    // Run every day at 2 AM
-    @Scheduled(cron = "0 0 2 * * ?")
+    // Run every minute
+    @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void processRecurringExpenses() {
         LocalDate today = LocalDate.now();
@@ -34,7 +34,7 @@ public class RecurringExpenseScheduler {
             Expense newExpense = new Expense();
             newExpense.setAmount(recurring.getAmount());
             newExpense.setDescription(recurring.getDescription() + " (Auto)");
-            newExpense.setExpenseDate(today);
+            newExpense.setExpenseDate(recurring.getNextDueDate());
             newExpense.setCategory(recurring.getCategory());
             newExpense.setUser(recurring.getUser());
 

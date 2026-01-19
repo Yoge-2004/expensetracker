@@ -20,11 +20,11 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/expenses")
-@CrossOrigin(origins = "*") // Added to ensure frontend can access
 public class ExpenseController {
 
     private final ExpenseService expenseService;
@@ -99,13 +99,16 @@ public class ExpenseController {
     }
 
     // ================= ✅ NEW BUDGET ENDPOINTS =================
-
     @PostMapping("/budget/user/{userId}")
     public ResponseEntity<?> setBudget(@PathVariable Long userId, @RequestBody BudgetDto dto) {
+        // ✅ FIX: Server-side validation
+        if (dto.getLimitAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return ResponseEntity.badRequest().body(java.util.Collections.singletonMap("error", "Budget limit must be a positive number"));
+        }
+
         User user = userService.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
         Category category = categoryRepository.findById(dto.getCategoryId()).orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
-        // Check if budget exists, else create new
         Budget budget = budgetRepository.findByUserAndCategoryId(user, dto.getCategoryId()).orElse(new Budget());
 
         budget.setUser(user);
@@ -113,7 +116,8 @@ public class ExpenseController {
         budget.setLimitAmount(dto.getLimitAmount());
 
         budgetRepository.save(budget);
-        return ResponseEntity.ok("Budget Set Successfully");
+
+        return ResponseEntity.ok(java.util.Collections.singletonMap("message", "Budget set successfully"));
     }
 
     @GetMapping("/budget/status/user/{userId}")
@@ -147,32 +151,87 @@ public class ExpenseController {
         User user = userService.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
         Category category = categoryRepository.findById(dto.getCategoryId()).orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
-        // 1. Save Recurring Record (For future automation)
+        // 1. Save Recurring Record
         RecurringExpense rec = new RecurringExpense();
         rec.setAmount(dto.getAmount());
         rec.setDescription(dto.getDescription());
         rec.setFrequency("MONTHLY");
-        // Next due date is exactly 1 month from the selected date
         rec.setNextDueDate(dto.getExpenseDate().plusMonths(1));
         rec.setCategory(category);
         rec.setUser(user);
         recurringRepository.save(rec);
 
-        // 2. Save Immediate Expense (The one happening right now)
+        // 2. Save Immediate Expense
         Expense firstExp = new Expense();
         firstExp.setAmount(dto.getAmount());
         firstExp.setDescription(dto.getDescription());
         firstExp.setExpenseDate(dto.getExpenseDate());
         firstExp.setCategory(category);
-
-        // Reuse your existing service logic
         expenseService.createExpense(firstExp, user);
 
-        return ResponseEntity.ok("Recurring Expense Setup");
+        // ✅ FIX: Return JSON instead of plain string
+        return ResponseEntity.ok(java.util.Collections.singletonMap("message", "Recurring Expense Setup Successfully"));
     }
 
     // Helper method (Kept from your original code)
     private ExpenseDto mapToDto(Expense expense) {
         return new ExpenseDto(expense.getId(), expense.getAmount(), expense.getDescription(), expense.getExpenseDate(), expense.getCategory() != null ? expense.getCategory().getId() : null, expense.getCategory() != null ? expense.getCategory().getName() : "Uncategorized");
+    }
+
+    // 1. Get All Active Subscriptions (Fixed to avoid JSON Loop)
+    @GetMapping("/recurring/user/{userId}")
+    public ResponseEntity<List<Map<String, Object>>> getUserSubscriptions(@PathVariable Long userId) {
+        User user = userService.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<RecurringExpense> subs = recurringRepository.findByUser(user);
+
+        // Convert Entity to simple JSON Map manually
+        List<Map<String, Object>> response = subs.stream().map(sub -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", sub.getId());
+            map.put("description", sub.getDescription());
+            map.put("amount", sub.getAmount());
+            map.put("nextDueDate", sub.getNextDueDate());
+            map.put("frequency", sub.getFrequency());
+
+            // Handle Category safely
+            if (sub.getCategory() != null) {
+                map.put("categoryName", sub.getCategory().getName());
+            } else {
+                map.put("categoryName", "Uncategorized");
+            }
+
+            return map;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 2. Delete/Cancel a Subscription
+    @DeleteMapping("/recurring/{recId}")
+    public ResponseEntity<?> deleteSubscription(@PathVariable Long recId) {
+        recurringRepository.deleteById(recId);
+        return ResponseEntity.ok(java.util.Collections.singletonMap("message", "Subscription cancelled successfully"));
+    }
+
+    // 3. Update a Subscription (Amount, Description, or Date)
+    @PutMapping("/recurring/{recId}")
+    public ResponseEntity<?> updateSubscription(@PathVariable Long recId, @RequestBody Map<String, Object> updates) {
+        RecurringExpense rec = recurringRepository.findById(recId)
+                .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
+
+        if (updates.containsKey("amount")) {
+            rec.setAmount(new BigDecimal(updates.get("amount").toString()));
+        }
+        if (updates.containsKey("description")) {
+            rec.setDescription((String) updates.get("description"));
+        }
+        // Handle Date updates if needed
+        if (updates.containsKey("nextDueDate")) {
+            rec.setNextDueDate(LocalDate.parse((String) updates.get("nextDueDate")));
+        }
+
+        recurringRepository.save(rec);
+        return ResponseEntity.ok(java.util.Collections.singletonMap("message", "Subscription updated successfully"));
     }
 }
