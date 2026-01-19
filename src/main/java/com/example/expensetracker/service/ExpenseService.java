@@ -19,11 +19,9 @@ public interface ExpenseService {
 
     Optional<Expense> getExpenseById(Long expenseId, User user);
 
-    List<Expense> getExpensesByDateRange(
-            User user,
-            LocalDate startDate,
-            LocalDate endDate
-    );
+    List<Expense> getExpensesByDateRange(User user, LocalDate startDate, LocalDate endDate);
 
     void deleteExpense(Long expenseId, User user);
+
+    Expense updateExpense(Long expenseId, Expense expenseDetails, User user);
 }

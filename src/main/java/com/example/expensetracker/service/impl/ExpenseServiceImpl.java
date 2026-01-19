@@ -80,4 +80,31 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         expenseRepository.delete(expense);
     }
+
+    @Override
+    public Expense updateExpense(Long expenseId, Expense expenseDetails, User user) {
+        // 1. Find the existing expense
+        Expense existingExpense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new RuntimeException("Expense not found with id: " + expenseId));
+
+        // 2. Security Check: Ensure the user owns this expense
+        if (!existingExpense.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized access to expense");
+        }
+
+        // 3. Update the fields
+        existingExpense.setDescription(expenseDetails.getDescription());
+        existingExpense.setAmount(expenseDetails.getAmount());
+        existingExpense.setExpenseDate(expenseDetails.getExpenseDate());
+
+        // 4. Update Category if provided
+        if (expenseDetails.getCategory() != null) {
+            existingExpense.setCategory(expenseDetails.getCategory());
+        }
+
+        // 5. Save and return
+        return expenseRepository.save(existingExpense);
+    }
+
+
 }
