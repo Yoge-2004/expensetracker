@@ -13,25 +13,38 @@ async function apiRequest(endpoint, options = {}) {
         headers
     });
 
-    // 1. Handle Login Redirects (401)
+    // 1. Handle Session Expiry (but not on login page)
     if (response.status === 401 && !endpoint.includes("/auth/login")) {
         localStorage.removeItem("token");
         window.location.href = "index.html";
         return;
     }
 
-    // 2. ✅ FIX: Handle "No Content" (204) for Deletes
-    // If the server says "Success, but I have nothing to send back", we return null.
-    if (response.status === 204) {
+    // 2. Handle Empty Success Responses (like Update Password or Delete)
+    if (response.status === 204 || response.headers.get("content-length") === "0") {
         return null;
     }
 
-    // 3. Handle Errors
+    // 3. ✅ THE FIX: Smart Error Parsing
     if (!response.ok) {
-        const error = await response.json().catch(() => ({})); // Safe parse
-        throw new Error(error.message || "Something went wrong");
+        const text = await response.text(); // Get the raw text first
+
+        try {
+            const errorObj = JSON.parse(text); // Try to turn it into an object
+
+            // If the backend gave us a specific 'message', use that.
+            // This turns '{"message": "Invalid email..."}' into -> "Invalid email..."
+            throw new Error(errorObj.message || errorObj.error || "Something went wrong");
+
+        } catch (e) {
+            // If the error was already extracted above, re-throw it
+            if (e.message && e.message !== "Unexpected token" && !e.message.includes("JSON")) {
+                throw e;
+            }
+            // Fallback: If it wasn't JSON, just show the raw text
+            throw new Error(text || "Something went wrong");
+        }
     }
 
-    // 4. Return JSON
     return response.json();
 }

@@ -1,9 +1,6 @@
 package com.example.expensetracker.controller;
 
-import com.example.expensetracker.dto.AuthResponse;
-import com.example.expensetracker.dto.LoginRequest;
-import com.example.expensetracker.dto.RegisterRequest;
-import com.example.expensetracker.dto.UserDto;
+import com.example.expensetracker.dto.*;
 import com.example.expensetracker.mapper.UserMapper;
 import com.example.expensetracker.model.User;
 import com.example.expensetracker.security.JwtService;
@@ -15,6 +12,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -57,5 +56,15 @@ public class AuthController {
         User registeredUser = userService.registerUser(user);
 
         return new ResponseEntity<>(UserMapper.toDto(registeredUser), HttpStatus.CREATED);
+    }
+
+
+    @PutMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) { // ✅ Use DTO
+        if (request.getEmail() == null || request.getNewPassword() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        userService.updatePassword(request.getEmail(), request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 }

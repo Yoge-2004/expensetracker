@@ -1,46 +1,44 @@
-// Auth Check
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
 const userName = localStorage.getItem("userName") || "User";
 
 if (!token || !userId) window.location.href = "index.html";
 
-// Update UI Name
+// Update UI with User Info
 document.querySelector(".top-bar p").textContent = `Welcome back, ${userName}`;
 document.querySelector(".avatar").textContent = userName.charAt(0).toUpperCase();
 
-// Formatters
+// Helper: Currency Formatter
 const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amt);
 const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('en-US', options);
 };
 
-// Global Data Store (To hold raw data)
-let allExpenses = []; 
+// Global State
+let allExpenses = [];
 let chartInstance = null;
 
 const elements = {
     totalAmount: document.getElementById("totalAmount"),
     expenseCount: document.getElementById("expenseCount"),
     expenseList: document.getElementById("expenseList"),
-    
-    // Filters
     filterSearch: document.getElementById("filterSearch"),
     filterSort: document.getElementById("filterSort"),
     filterMonth: document.getElementById("filterMonth"),
     filterYear: document.getElementById("filterYear"),
     filterCategory: document.getElementById("filterCategory"),
-
-    // Modal & Forms
     modal: document.getElementById("expenseModal"),
     categorySelect: document.getElementById("categorySelect"),
     addCategoryBtn: document.getElementById("addCategoryBtn"),
     addForm: document.getElementById("addExpenseForm"),
-    profileMenu: document.getElementById("profileMenu")
+    profileMenu: document.getElementById("profileMenu"),
+    profileTrigger: document.getElementById("profileTrigger"),
+    toggleFiltersBtn: document.getElementById("toggleFiltersBtn"),
+    filterPanel: document.getElementById("filterPanel")
 };
 
-// 1. Load Data
+// --- INITIALIZATION ---
 async function loadDashboard() {
     try {
         const [expenses, globalCats, userCats] = await Promise.all([
@@ -49,107 +47,62 @@ async function loadDashboard() {
             apiRequest(`/categories/user/${userId}`)
         ]);
 
-        // Save raw data globally
-        allExpenses = expenses; 
+        allExpenses = expenses;
         const allCategories = [...globalCats, ...userCats];
 
-        // Setup UI
         populateCategoryDropdown(allCategories);
-        populateFilterDropdowns(allCategories, expenses); // New: Setup filters
-        
-        applyFilters(); // Initial Render
-
+        populateFilterDropdowns(allCategories, expenses);
+        applyFilters(); // Renders list and stats
     } catch (error) {
         console.error(error);
+        if (error.message.includes("User not found")) {
+            localStorage.clear();
+            window.location.href = "index.html";
+        }
     }
 }
 
-// 2. Populate Dropdowns
-function populateCategoryDropdown(categories) {
-    const opts = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    elements.categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>' + opts;
-}
-
-function populateFilterDropdowns(categories, expenses) {
-    // 1. Filter Category Dropdown
-    const catOpts = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-    elements.filterCategory.innerHTML = '<option value="all">All Categories</option>' + catOpts;
-
-    // 2. Filter Year Dropdown (Extract unique years from expenses)
-    const years = [...new Set(expenses.map(e => new Date(e.expenseDate).getFullYear()))].sort((a,b) => b-a);
-    const yearOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    elements.filterYear.innerHTML = '<option value="all">All Years</option>' + yearOpts;
-}
-
-// 3. The Core Filtering Logic 🧠
-function applyFilters() {
-    let filtered = [...allExpenses];
-
-    // A. Text Search
-    const search = elements.filterSearch.value.toLowerCase();
-    if (search) {
-        filtered = filtered.filter(e => 
-            e.description.toLowerCase().includes(search) || 
-            (e.categoryName && e.categoryName.toLowerCase().includes(search))
-        );
+// --- RENDERING ---
+function renderList(expenses) {
+    if (expenses.length === 0) {
+        elements.expenseList.innerHTML = `<p style="text-align:center; color:#555; margin-top:20px;">No expenses found.</p>`;
+        return;
     }
 
-    // B. Category Filter
-    const cat = elements.filterCategory.value;
-    if (cat !== 'all') {
-        filtered = filtered.filter(e => e.categoryName === cat);
-    }
-
-    // C. Month Filter
-    const month = elements.filterMonth.value;
-    if (month !== 'all') {
-        filtered = filtered.filter(e => new Date(e.expenseDate).getMonth() === parseInt(month));
-    }
-
-    // D. Year Filter
-    const year = elements.filterYear.value;
-    if (year !== 'all') {
-        filtered = filtered.filter(e => new Date(e.expenseDate).getFullYear() === parseInt(year));
-    }
-
-    // E. Sorting
-    const sort = elements.filterSort.value;
-    filtered.sort((a, b) => {
-        if (sort === 'date-desc') return new Date(b.expenseDate) - new Date(a.expenseDate);
-        if (sort === 'date-asc') return new Date(a.expenseDate) - new Date(b.expenseDate);
-        if (sort === 'amount-desc') return b.amount - a.amount;
-        if (sort === 'amount-asc') return a.amount - b.amount;
-        return 0;
-    });
-
-    // Update UI
-    updateStats(filtered);
-    renderChart(filtered);
-    renderList(filtered);
-}
-
-// 4. Attach Event Listeners to Filters
-[elements.filterSearch, elements.filterSort, elements.filterMonth, elements.filterYear, elements.filterCategory]
-    .forEach(el => el.addEventListener('input', applyFilters));
-
-
-// 5. Render Functions
-function updateStats(expenses) {
-    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    elements.totalAmount.textContent = formatCurrency(total);
-    elements.expenseCount.textContent = expenses.length;
+    elements.expenseList.innerHTML = expenses.map(exp => `
+        <div class="expense-item">
+            <div class="expense-info">
+                <h4>${exp.description}</h4>
+                <div class="expense-meta">
+                    ${formatDate(exp.expenseDate)} • <span style="color:#FF9F6E">${exp.categoryName || 'General'}</span>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap: 16px;">
+                <div class="expense-amount">${formatCurrency(exp.amount)}</div>
+                
+                <button class="btn-delete" onclick="deleteExpense(${exp.id})" title="Delete">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `).join("");
 }
 
 function renderChart(expenses) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const categoryTotals = {};
+
     expenses.forEach(exp => {
-        const catName = exp.categoryName || 'Uncategorized';
-        categoryTotals[catName] = (categoryTotals[catName] || 0) + exp.amount;
+        const cat = exp.categoryName || 'Uncategorized';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + exp.amount;
     });
 
     if (chartInstance) chartInstance.destroy();
 
+    // Chart Options for responsiveness
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -162,45 +115,84 @@ function renderChart(expenses) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'right', labels: { color: '#AAB0BC', font: { size: 10 } } } }
+            maintainAspectRatio: false, // Important for chart wrapper
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#9AA0AE', font: { size: 10 }, boxWidth: 10 }
+                }
+            }
         }
     });
 }
 
-function renderList(expenses) {
-    if (expenses.length === 0) {
-        elements.expenseList.innerHTML = `<p style="text-align:center; color:#555; margin-top:20px;">No expenses found.</p>`;
-        return;
-    }
-    elements.expenseList.innerHTML = expenses.map(exp => `
-        <div class="expense-item">
-            <div class="expense-info">
-                <h4>${exp.description}</h4>
-                <div class="expense-meta">
-                    ${formatDate(exp.expenseDate)} • <span style="color:#FF9F6E">${exp.categoryName || 'General'}</span>
-                </div>
-            </div>
-            <div style="display:flex; align-items:center;">
-                <div class="expense-amount">${formatCurrency(exp.amount)}</div>
-                <button class="btn-delete" onclick="deleteExpense(${exp.id})" title="Delete Expense">🗑</button>
-            </div>
-        </div>
-    `).join("");
+function updateStats(expenses) {
+    elements.totalAmount.textContent = formatCurrency(expenses.reduce((sum, exp) => sum + exp.amount, 0));
+    elements.expenseCount.textContent = expenses.length;
 }
 
-// 6. Actions (Add, Delete, etc.)
+// --- FILTERS ---
+function populateFilterDropdowns(categories, expenses) {
+    const catOpts = categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    elements.filterCategory.innerHTML = '<option value="all">All Categories</option>' + catOpts;
+
+    const years = [...new Set(expenses.map(e => new Date(e.expenseDate).getFullYear()))].sort((a, b) => b - a);
+    const yearOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    elements.filterYear.innerHTML = '<option value="all">All Years</option>' + yearOpts;
+}
+
+function applyFilters() {
+    let filtered = [...allExpenses];
+    const search = elements.filterSearch.value.toLowerCase();
+
+    if (search) {
+        filtered = filtered.filter(e =>
+            e.description.toLowerCase().includes(search) ||
+            (e.categoryName && e.categoryName.toLowerCase().includes(search))
+        );
+    }
+
+    if (elements.filterCategory.value !== 'all') filtered = filtered.filter(e => e.categoryName === elements.filterCategory.value);
+    if (elements.filterMonth.value !== 'all') filtered = filtered.filter(e => new Date(e.expenseDate).getMonth() === parseInt(elements.filterMonth.value));
+    if (elements.filterYear.value !== 'all') filtered = filtered.filter(e => new Date(e.expenseDate).getFullYear() === parseInt(elements.filterYear.value));
+
+    const sort = elements.filterSort.value;
+    filtered.sort((a, b) => {
+        if (sort === 'date-desc') return new Date(b.expenseDate) - new Date(a.expenseDate);
+        if (sort === 'date-asc') return new Date(a.expenseDate) - new Date(b.expenseDate);
+        if (sort === 'amount-desc') return b.amount - a.amount;
+        if (sort === 'amount-asc') return a.amount - b.amount;
+        return 0;
+    });
+
+    updateStats(filtered);
+    renderChart(filtered);
+    renderList(filtered);
+}
+
+// Event Listeners for Filters
+[elements.filterSearch, elements.filterSort, elements.filterMonth, elements.filterYear, elements.filterCategory]
+    .forEach(el => el.addEventListener('input', applyFilters));
+
+// Toggle Filter Panel
+elements.toggleFiltersBtn.addEventListener("click", () => {
+    elements.filterPanel.classList.toggle("active");
+    elements.toggleFiltersBtn.classList.toggle("active");
+});
+
+// --- ACTIONS (Delete, Add, Modal) ---
 window.deleteExpense = async (id) => {
-    if(!confirm("Delete this expense?")) return;
+    if (!confirm("Delete this expense?")) return;
     try {
         await apiRequest(`/expenses/${id}/user/${userId}`, { method: 'DELETE' });
-        loadDashboard(); 
+        loadDashboard();
     } catch (err) { alert(err.message); }
 };
 
+// Delete Account Logic
 document.getElementById("deleteAccountBtn").addEventListener("click", async (e) => {
     e.preventDefault();
-    if(!confirm("Permanently delete account?")) return;
+    if (!confirm("Permanently delete account? This cannot be undone.")) return;
     try {
         await apiRequest(`/users/${userId}`, { method: 'DELETE' });
         localStorage.clear();
@@ -208,6 +200,7 @@ document.getElementById("deleteAccountBtn").addEventListener("click", async (e) 
     } catch (err) { alert(err.message); }
 });
 
+// Add Category
 elements.addCategoryBtn.addEventListener("click", async () => {
     const name = prompt("Enter new category name:");
     if (!name) return;
@@ -221,14 +214,10 @@ elements.addCategoryBtn.addEventListener("click", async () => {
         option.textContent = newCat.name;
         option.selected = true;
         elements.categorySelect.appendChild(option);
-        
-        // Refresh global data to include new category in filters
-        loadDashboard();
-    } catch (error) {
-        alert("Failed to add category: " + error.message);
-    }
+    } catch (error) { alert("Failed: " + error.message); }
 });
 
+// Add Expense
 elements.addForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -247,17 +236,32 @@ elements.addForm.addEventListener("submit", async (e) => {
     } catch (err) { alert(err.message); }
 });
 
-// Global Toggles
-document.getElementById("profileTrigger").addEventListener("click", () => elements.profileMenu.classList.toggle("active"));
-document.addEventListener("click", (e) => {
-    if (!e.target.closest(".user-profile")) elements.profileMenu.classList.remove("active");
-});
+function populateCategoryDropdown(categories) {
+    const opts = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    elements.categorySelect.innerHTML = '<option value="" disabled selected>Select a category</option>' + opts;
+}
+
+// Modal Toggle
 document.getElementById("openModalBtn").addEventListener("click", () => elements.modal.classList.add("active"));
 document.getElementById("closeModalBtn").addEventListener("click", () => elements.modal.classList.remove("active"));
+
+// --- PROFILE MENU TOGGLE FIX ---
+elements.profileTrigger.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevents click from bubbling to document
+    elements.profileMenu.classList.toggle("active");
+});
+
+document.addEventListener("click", (e) => {
+    // If click is outside menu AND outside trigger, close it
+    if (!elements.profileTrigger.contains(e.target) && !elements.profileMenu.contains(e.target)) {
+        elements.profileMenu.classList.remove("active");
+    }
+});
+
 document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     window.location.href = "index.html";
 });
 
-// Init
+// Start
 loadDashboard();

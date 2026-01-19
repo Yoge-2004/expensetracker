@@ -77,4 +77,13 @@ public class UserServiceImpl implements UserService {
         // 3. Finally, delete the user
         userRepository.delete(user);
     }
+
+    @Override
+    public void updatePassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with this email"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
