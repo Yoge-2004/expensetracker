@@ -6,32 +6,9 @@
     <title>Dashboard | Expense Tracker</title>
     <link rel="stylesheet" href="css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#05070D">
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
-    <meta name="description"
-        content="Track your daily expenses, analyze spending habits, and manage your budget effortlessly with our professional Expense Tracker dashboard.">
-    <meta name="keywords"
-        content="expense tracker, budget manager, personal finance, money management, spending analysis, financial dashboard">
-    <meta name="author" content="Your Name or Company">
-    <meta name="robots" content="index, follow">
-
-    <meta name="theme-color" content="#05070D">
-
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://your-website-url.com/">
-    <meta property="og:title" content="Expense Tracker - Master Your Money">
-    <meta property="og:description"
-        content="Track, analyze, and optimize your spending habits with our professional dashboard.">
-    <meta property="og:image"
-        content="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop">
-
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://your-website-url.com/">
-    <meta property="twitter:title" content="Expense Tracker - Master Your Money">
-    <meta property="twitter:description"
-        content="Track, analyze, and optimize your spending habits with our professional dashboard.">
-    <meta property="twitter:image"
-        content="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -42,16 +19,35 @@
         <header class="top-bar">
             <div>
                 <h2>Dashboard</h2>
-                <p style="color:#9AA0AE; font-size:14px;">Welcome back</p>
+                <p class="text-muted">Welcome back</p>
             </div>
 
-            <div class="user-profile" id="profileTrigger">
-                <span style="font-size:13px; color:#9AA0AE; margin-right:8px; display:none;">My Account</span>
-                <div class="avatar">U</div>
+            <div style="display:flex; gap:16px; align-items:center;">
+                <button id="themeToggle" class="btn-icon" title="Switch Theme">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
 
-                <div class="profile-menu" id="profileMenu">
-                    <a href="#" id="logoutBtn">Logout</a>
-                    <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
+                <div class="user-profile" id="profileTrigger">
+                    <div class="avatar">U</div>
+                    <div class="profile-menu" id="profileMenu">
+                        <a href="#" id="logoutBtn">Logout</a>
+                        <a href="#" id="deleteAccountBtn" style="color: #FF6B50;">Delete Account</a>
+                    </div>
                 </div>
             </div>
         </header>
@@ -73,20 +69,32 @@
 
             <div class="card chart-card">
                 <span class="card-label">Spend by Category</span>
-
                 <div class="chart-wrapper">
                     <canvas id="expenseChart"></canvas>
                 </div>
             </div>
         </section>
 
+        <section class="card" style="min-height: 300px;">
+            <span class="card-label">Spending Trend</span>
+            <div style="position: relative; height: 250px; width:100%;">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </section>
+
         <section class="card recent-transactions">
             <div class="list-header">
                 <h3>Recent Expenses</h3>
-
                 <div class="list-header-actions">
                     <input type="text" id="filterSearch" placeholder="Search expenses..." class="search-bar">
-
+                    <button id="exportBtn" class="btn-icon" title="Export to CSV">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
                     <button id="toggleFiltersBtn" class="btn-icon" title="Show Filters">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -97,12 +105,9 @@
             </div>
 
             <div class="filter-toolbar" id="filterPanel">
-                <select id="filterSort" class="filter-select">
-                    <option value="date-desc">Date: Newest First</option>
-                    <option value="date-asc">Date: Oldest First</option>
-                    <option value="amount-desc">Amount: High to Low</option>
-                    <option value="amount-asc">Amount: Low to High</option>
-                </select>
+                <input type="date" id="filterStartDate" class="filter-select dark-date" title="Start Date">
+                <input type="date" id="filterEndDate" class="filter-select dark-date" title="End Date">
+
                 <select id="filterMonth" class="filter-select">
                     <option value="all">All Months</option>
                     <option value="0">January</option>
@@ -121,8 +126,15 @@
                 <select id="filterYear" class="filter-select">
                     <option value="all">All Years</option>
                 </select>
+
                 <select id="filterCategory" class="filter-select">
                     <option value="all">All Categories</option>
+                </select>
+                <select id="filterSort" class="filter-select">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="amount-desc">High to Low</option>
+                    <option value="amount-asc">Low to High</option>
                 </select>
             </div>
 
@@ -134,37 +146,30 @@
 
     <div class="modal-overlay" id="expenseModal">
         <div class="modal">
-            <h3 style="margin-bottom:24px; color:#fff;">Add Expense</h3>
+            <h3 style="margin-bottom:24px; color:var(--text-main);">Add Expense</h3>
             <form id="addExpenseForm">
+                <input type="hidden" id="expenseId">
                 <div class="form-group">
                     <label>Description</label>
-                    <input type="text" id="desc" required placeholder="e.g. Dinner, Uber, Groceries">
+                    <input type="text" id="desc" required placeholder="e.g. Dinner">
                 </div>
-
                 <div class="form-group">
                     <label>Amount (₹)</label>
                     <input type="number" id="amount" required placeholder="0.00" step="0.01">
                 </div>
-
                 <div class="form-group">
                     <label>Category</label>
                     <div style="display: flex; gap: 10px;">
                         <select id="categorySelect" required>
                             <option value="" disabled selected>Select a category</option>
                         </select>
-
-                        <button type="button" id="addCategoryBtn"
-                            style="width: 50px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; cursor: pointer; font-size: 20px;">
-                            +
-                        </button>
+                        <button type="button" id="addCategoryBtn" class="btn-icon" style="width:50px;">+</button>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Date</label>
                     <input type="date" id="date" required class="dark-date">
                 </div>
-
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="closeModalBtn">Cancel</button>
                     <button type="submit" class="btn-primary" style="flex:1;">Save Expense</button>
@@ -175,11 +180,6 @@
 
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>
-    <script>
-        // Prevent future dates
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('date').setAttribute('max', today);
-    </script>
 </body>
 
 </html>
